@@ -1,4 +1,6 @@
 import pydt
+import copy
+from ThresholdLogic import ThresholdLogicProcess
 
 #some simple test
 #decisiontbl = pydt.load_xls("California-DecisionTable.xls")
@@ -15,13 +17,21 @@ decisiontbl = pydt.load_xls("California-DecisionTable.xls")
 test_timeEntries = pydt.load_xls_list_dict("California-TimeEntries.xls")
 for entry in test_timeEntries:
     entry['Type']='"Threshold Logic"'
+    entry['actions']=[]
     for col in decisiontbl['condition_headers']:
         if not entry.has_key(col[1]) : 
             entry[col[1]]=""   
 
 #for entry in test_timeEntries:
-#    pydt.process_dt(entry, decisiontbl)
+#    tempentry = copy.deepcopy(entry)
+#    tempentry['action']={}
+#    weeklytotal
+#    while tempentry['TimeEntrHours'] > 0 :
+#        pydt.process_dt(tempentry, decisiontbl)
+#        tempentry['TimeEntrHours'] = ThresholdLogicProcess(entry,tempentry['action'])
+#    entry['actions'].append(tempentry['action'])
 
+test_timeEntries[0]['action']={}
 pydt.process_dt(test_timeEntries[0], decisiontbl)
 
 if not test_fact.has_key("Premium") :

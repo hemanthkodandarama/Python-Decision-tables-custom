@@ -19,7 +19,10 @@ def process_dt(fact, table) :
 	#calc the headers
 	headers = map(make_header, table['condition_headers'])
 	#lets try a map based approach
+	####eval_table_index = -1
 	def eval_table(row) :
+	    ###global eval_table_index
+	    ###eval_table_index += 1
 	    #go through all the conditions, evaluating
 	    def check_condition(condition) :
 	    #for condition in headers :
@@ -42,7 +45,13 @@ def process_dt(fact, table) :
 	        def apply_actions(action) :
 	            col_label = action[0]
 	            if (row.has_key(col_label)) :
-	                fact[action[1]] = row[col_label]
+	                #fact[action[1]] = row[col_label]
+	                if len(fact['actions']) != (table['data'].index(row)):
+	                    fact['actions'].append({})
+	                factaction=fact['actions'][table['data'].index(row)-1]
+                    ##table['data'].index(row)
+	                #fact['action'][action[1]] = row[col_label]
+	                factaction[action[1]] = row[col_label]
 	        map(apply_actions, table['action_headers'])
 	map(eval_table, table['data'])
 

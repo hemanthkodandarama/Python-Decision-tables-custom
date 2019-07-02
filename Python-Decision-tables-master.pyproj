@@ -24,6 +24,7 @@
     <Content Include="README.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ThresholdLogic.py" />
     <Compile Include="Util.py">
       <SubType>Code</SubType>
     </Compile>
