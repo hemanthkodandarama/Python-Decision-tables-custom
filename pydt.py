@@ -3,7 +3,7 @@
 # Use entirely at your own risk !
 # Licenced under LGPL unless stated otherwise
 
-
+from Util import Between
 
 #this is the actual "engine" if you can call it that.
 def process_dt(fact, table) :
@@ -14,6 +14,7 @@ def process_dt(fact, table) :
 	        #itms = hdr[1].split(' ')
 	        return [hdr[0], fact[splut[0]] + ' ' + splut[1]]
 	    else :
+	        ######- to check hemanth return [hdr[0], fact[hdr[1]]]
 	        return [hdr[0], fact[hdr[1]]]
 	#calc the headers
 	headers = map(make_header, table['condition_headers'])
@@ -22,11 +23,18 @@ def process_dt(fact, table) :
 	    #go through all the conditions, evaluating
 	    def check_condition(condition) :
 	    #for condition in headers :
+
 	        col_index = condition[0]
 	        if not row.has_key(col_index) :
 	            return False
-	        cell_value = row[col_index]
-	        predicate = str(condition[1]) + str(cell_value)
+	        if not condition[1] :
+	            return False
+	        value = row[col_index]
+	        # condtions added to check test -- HEmanth
+	        value = value if bool(value) else  "== True"
+            #6.0Between({value},0,8)
+
+	        predicate = (str(condition[1]) if str(value).find('{value}') == -1 else '')  + str(value).replace('{value}',str(condition[1]))
 	        return not eval(predicate)
 	    size = len(filter(check_condition,headers))
 	    if size == 0 :
@@ -77,6 +85,19 @@ def load_xls(file_name) :
 		}
 
 
-
-
-
+def load_xls_list_dict(file_name) :
+	import xlrd
+    # Open the workbook and select the first worksheet
+	wb = xlrd.open_workbook(file_name)
+	sh = wb.sheet_by_index(0)
+    # List to hold dictionaries
+	data_list = []
+    # Iterate through each row in worksheet and fetch values into dict
+	headers = sh.row_values(0)
+	for rownum in range(1, sh.nrows):
+		data = {}
+		for cols in range(sh.ncols):
+		    row_values = sh.row_values(rownum)
+		    data[headers[cols]] = row_values[cols]
+		data_list.append(data)
+	return data_list
