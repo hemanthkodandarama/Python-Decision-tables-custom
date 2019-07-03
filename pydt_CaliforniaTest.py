@@ -28,7 +28,3 @@ for timeentry in test_timeEntries:
 
         timeentry[action['PayCode']] += action['PayHours'] 
     print(' %s - %s - %s  ==  %s ' % ( timeentry['DayNumber'],timeentry['Date'],timeentry['TimeEntryHours'] , GetPayDetails(timeentry)))
-
-
-
-print('exit')
