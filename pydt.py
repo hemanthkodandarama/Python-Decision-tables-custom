@@ -5,6 +5,7 @@
 
 from Util import Between
 import numpy as np
+import Conditions
 
 #this is the actual "engine" if you can call it that.
 def process_dt(fact, table) :
@@ -15,15 +16,11 @@ def process_dt(fact, table) :
 	        #itms = hdr[1].split(' ')
 	        return [hdr[0], fact[splut[0]] + ' ' + splut[1]]
 	    else :
-	        ######- to check hemanth return [hdr[0], fact[hdr[1]]]
 	        return [hdr[0], fact[hdr[1]]]
 	#calc the headers
 	headers = map(make_header, table['condition_headers'])
 	#lets try a map based approach
-	####eval_table_index = -1
 	def eval_table(row) :
-	    ###global eval_table_index
-	    ###eval_table_index += 1
 	    #go through all the conditions, evaluating
 	    def check_condition(condition) :
 	    #for condition in headers :
@@ -34,11 +31,10 @@ def process_dt(fact, table) :
 	        if not condition[1] :
 	            return False
 	        value = row[col_index]
-	        # condtions added to check test -- HEmanth
-	        value = value if bool(value) else  "== True"
-            #6.0Between({value},0,8)
 
-	        predicate = (str(condition[1]) if str(value).find('{value}') == -1 else '')  + str(value).replace('{value}',str(condition[1]))
+	        value = value if bool(value) else  "== True"
+
+	        predicate = (str(condition[1]) if str(value).find('{value}') == -1 else '') + str(value).replace('{value}',str(condition[1]))
 	        return not eval(predicate)
 	    size = len(filter(check_condition,headers))
 	    if size == 0 :
@@ -46,17 +42,16 @@ def process_dt(fact, table) :
 	        def apply_actions(action) :
 	            col_label = action[0]
 	            if (row.has_key(col_label)) :
-	                #fact[action[1]] = row[col_label]
-	                while len(fact['actions']) != (table['data'].index(row)):
+	                factaction = filter(lambda x: x['row']==row, fact['actions'])
+	                if not factaction:
 	                    fact['actions'].append({})
-	                factaction=fact['actions'][table['data'].index(row)-1]
-                    ##table['data'].index(row)
-	                #fact['action'][action[1]] = row[col_label]
+	                    factaction = fact['actions'][len(fact['actions'])-1]
+	                    factaction['row']=row
+	                else:
+	                    factaction=factaction[0]
 	                factaction[action[1]] = row[col_label]
 	        map(apply_actions, table['action_headers'])
 	map(eval_table, table['data'])
-
-
 
 
 # Load a XLS into a decision table structure for processing
@@ -64,7 +59,7 @@ def load_xls(file_name) :
 	import xlrd
 	book = xlrd.open_workbook(file_name)
 	sh = book.sheet_by_index(0)	
-        condition_headers, action_headers, data = [],[],[]
+	condition_headers, action_headers, data = [],[],[]
 	for rx in range(sh.nrows):
 		if rx == 0 :		
 			divider = 0
@@ -115,10 +110,17 @@ def load_xls_list_dict(file_name) :
 
 def MapTimeAndDecisionData(test_timeEntries,decisiontbl):
     for entry in test_timeEntries:
-        entry['actions']=[]
+        entry['actions'] = []
         for col in decisiontbl['condition_headers']:
             if not entry.has_key(col[1]) : 
-                entry[col[1]]=""
+                entry[col[1]] = ""
 
 def GetUniqueConditionsNames(decisiontbl):
   return map(lambda x: x.replace('"',''),np.unique(map(lambda x: x[0] , decisiontbl["data"])))
+
+def ProcessTimeEntry(ConditionNames,timeEntries,entry,decisiontbl):
+    process_dt(entry, decisiontbl)
+
+    for condition in ConditionNames:
+        cmd = "Conditions.%s.ApplyActions(condition,timeEntries,entry,decisiontbl)" % (condition)
+        eval(cmd)
