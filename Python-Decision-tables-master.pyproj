@@ -24,13 +24,19 @@
     <Content Include="README.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ThresholdLogic.py" />
+    <Compile Include="Conditions\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Conditions\Threshold.py" />
     <Compile Include="Util.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="pydt.py" />
     <Compile Include="pydt_CaliforniaTest.py" />
     <Compile Include="pydt_test.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Conditions\" />
   </ItemGroup>
   <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />

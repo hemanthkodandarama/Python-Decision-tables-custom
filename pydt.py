@@ -4,6 +4,7 @@
 # Licenced under LGPL unless stated otherwise
 
 from Util import Between
+import numpy as np
 
 #this is the actual "engine" if you can call it that.
 def process_dt(fact, table) :
@@ -46,7 +47,7 @@ def process_dt(fact, table) :
 	            col_label = action[0]
 	            if (row.has_key(col_label)) :
 	                #fact[action[1]] = row[col_label]
-	                if len(fact['actions']) != (table['data'].index(row)):
+	                while len(fact['actions']) != (table['data'].index(row)):
 	                    fact['actions'].append({})
 	                factaction=fact['actions'][table['data'].index(row)-1]
                     ##table['data'].index(row)
@@ -110,3 +111,14 @@ def load_xls_list_dict(file_name) :
 		    data[headers[cols]] = row_values[cols]
 		data_list.append(data)
 	return data_list
+
+
+def MapTimeAndDecisionData(test_timeEntries,decisiontbl):
+    for entry in test_timeEntries:
+        entry['actions']=[]
+        for col in decisiontbl['condition_headers']:
+            if not entry.has_key(col[1]) : 
+                entry[col[1]]=""
+
+def GetUniqueConditionsNames(decisiontbl):
+  return map(lambda x: x.replace('"',''),np.unique(map(lambda x: x[0] , decisiontbl["data"])))
