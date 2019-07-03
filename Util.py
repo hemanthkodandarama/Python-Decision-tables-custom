@@ -1,6 +1,5 @@
 def Between(number,fromnumber,tonumber):
-    #return number > fromnumber and number<=tonumber
-    return number > fromnumber
+    return number >= fromnumber and number<=tonumber
 
 def GetPayDetails(timeentry,paycodes):
     data = ','
