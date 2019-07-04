@@ -7,7 +7,7 @@ test_timeEntries = pydt.load_xls_list_dict("California-TimeEntries.xls")
 
 pydt.MapTimeAndDecisionData(test_timeEntries,decisiontbl)
 
-paycodes = map(lambda x: x,np.unique(map(lambda x: x[5] , decisiontbl["data"])))
+paycodes = map(lambda x: x,np.unique(map(lambda x: x[4] , decisiontbl["data"])))
 paycodes.reverse()
 
 ConditionNames = pydt.GetUniqueConditionsNames(decisiontbl)

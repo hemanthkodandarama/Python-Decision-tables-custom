@@ -1,37 +1,42 @@
 import json
 
-supportedKeyTypes = ['Aggregation','ConsecutiveDay']
-
-def ApplyActions(conditionName,alltimeEntries,timeentry,decisiontbl):
-    if not (timeentry and timeentry['actions']):
-        return 0
-    
-    for action in timeentry['actions']:
-        if not action.has_key('MetaData'):
-            continue 
-
-        metadata = json.loads("{ %s }" % (action['MetaData']))
-        fromRange,toRange = GetHoursRange(metadata)
-        if not metadata.has_key('KeyType'):
-            payhours = (timeentry['TimeEntryHours'] - fromRange)
-            if toRange != None:
-                payhours = (toRange - fromRange) if timeentry['TimeEntryHours'] >= toRange else timeentry['TimeEntryHours']
-            action['PayHours'] = action['PayHours'] + payhours if action.has_key('PayHours') else payhours
-        else:
-            if metadata['KeyType'] in supportedKeyTypes:
-                cmd = 'Apply%sAction(action,metadata,conditionName,alltimeEntries,timeentry,decisiontbl)' % (metadata['KeyType'])
-                eval(cmd)
-
-    
+supportedActionTypes = ['Threshold','Aggregation','ConsecutiveDay']
 
 def GetHoursRange(metadata):
     return metadata['HoursRange'][0],metadata['HoursRange'][1] if len(metadata['HoursRange']) == 2 else None
 
+def GetPayHours(timeentry,fromRange,toRange):
+    payhours = (timeentry['TimeEntryHours'] - fromRange)
+    if toRange != None:
+        payhours = (toRange - fromRange) if timeentry['TimeEntryHours'] >= toRange else timeentry['TimeEntryHours']
+    return payhours
+
+def ApplyActions(conditionName,alltimeEntries,timeentry,decisiontbl):
+    if not (timeentry and timeentry['actions']):
+        return
+    
+    for action in timeentry['actions']:
+        if not action.has_key('MetaData'):
+            continue
+        metadata = json.loads("{ %s }" % (action['MetaData']))
+        if not metadata['Type'] in supportedActionTypes:
+            continue
+
+        cmd = 'Apply%sAction(action,metadata,conditionName,alltimeEntries,timeentry,decisiontbl)' % (metadata['Type'])
+        canexit = eval(cmd)
+        if canexit:
+            return
+
+def ApplyThresholdAction(action,metadata,conditionName,alltimeEntries,timeentry,decisiontbl):
+    fromRange,toRange = GetHoursRange(metadata)
+    payhours = GetPayHours(timeentry,fromRange,toRange)
+    action['PayHours'] = action['PayHours'] + payhours if action.has_key('PayHours') else payhours
+
 def ApplyAggregationAction(aggregateaction,metadata,conditionName,alltimeEntries,timeentry,decisiontbl):
     fromRange,toRange = GetHoursRange(metadata)
-    # to do days logic
     rtpaycode = metadata['RTPayCode']
-    totalrthours = GetTotalPayHours(alltimeEntries,rtpaycode)
+    dayNumber = metadata['Days']
+    totalrthours = GetTotalPayHours(alltimeEntries,rtpaycode,timeentry,dayNumber)
     diffrtHours = (totalrthours - fromRange) if totalrthours > fromRange else 0
     if diffrtHours > 0:
         for action in timeentry['actions']:
@@ -46,23 +51,23 @@ def ApplyAggregationAction(aggregateaction,metadata,conditionName,alltimeEntries
             if diffrtHours == 0:
                 return
 
-
 def ApplyConsecutiveDayAction(action,metadata,conditionName,alltimeEntries,timeentry,decisiontbl):
-    fromRange,toRange = GetHoursRange(metadata)
     isconsecutiveDay = True
     for entry in alltimeEntries:
         isconsecutiveDay = False if entry['TimeEntryHours'] == 0 else isconsecutiveDay
 
-    if isconsecutiveDay:
-        action['PayHours'] = timeentry['TimeEntryHours']
-        for otheraction in timeentry['actions']:
-            if otheraction == action:
-                continue
-            otheraction['PayHours'] = 0
+    if isconsecutiveDay and (alltimeEntries.index(timeentry) + 1) == metadata['DayNumber']:
+       fromRange,toRange = GetHoursRange(metadata)
+       payhours = GetPayHours(timeentry,fromRange,toRange)
+       action['PayHours'] = action['PayHours'] + payhours if action.has_key('PayHours') else payhours
+       if entry['TimeEntryHours'] <= toRange or toRange is None:
+           return True
 
-def GetTotalPayHours(alltimeEntries,paycode):
+def GetTotalPayHours(alltimeEntries,paycode,currenttimeentry,dayNumber):
     totalHours = 0
     for timeentry in alltimeEntries:
+        if alltimeEntries.index(timeentry) >= dayNumber:
+            continue
         for action in timeentry['actions']:
             if not action.has_key('MetaData'):
                 continue
